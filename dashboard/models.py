@@ -26,6 +26,9 @@ class User(AbstractUser):
     last_name = None
     last_login = None
     is_active = None
+    is_superuser = None
+    is_staff = None
+    date_joined = None
 
     id = models.CharField(primary_key=True, max_length=36, default=uuid.uuid4())
     username = models.CharField(max_length=75)
@@ -34,9 +37,7 @@ class User(AbstractUser):
     phone = models.CharField(unique=True, max_length=15)
     password = models.CharField(max_length=200, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.CharField(max_length=36, null=True)
     is_active = models.BooleanField(default=False)
-    created_at = models.DateTimeField()
 
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
@@ -162,7 +163,7 @@ class Quiz(models.Model):
         max_length=36,
         default=uuid.uuid4()
     )
-    question = models.CharField(unique=True, max_length=300)
+    question = models.CharField(unique=True, max_length=250)
     option_a = models.CharField(max_length=200)
     option_b = models.CharField(max_length=200)
     option_c = models.CharField(max_length=200)
