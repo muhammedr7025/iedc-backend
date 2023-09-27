@@ -6,6 +6,7 @@ import decouple
 from django.db.models import Q
 from rest_framework.views import APIView
 from utils.response import CustomResponse
+from django.contrib.auth import authenticate
 
 from dashboard.serializer import UserRegisterSerializer
 from .models import User, ForgetPassword
@@ -36,12 +37,45 @@ class UserRegisterAPI(APIView):
         ).get_failure_response()
 
 
+class UserLoginAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+
+        email_muid = request.data.get('emailOrMuid')
+        password = request.data.get('password')
+
+        user = User.objects.filter(
+            Q(muid=email_muid) |
+            Q(email=email_muid)
+        ).first()
+
+        if user:
+            if user.check_password(password):
+                return CustomResponse(
+                    general_message='Successfully login'
+                ).get_success_response()
+            else:
+                return CustomResponse(
+                    general_message='incorrect password'
+                ).get_failure_response()
+
+        return CustomResponse(
+            general_message='invalid email or muid'
+        ).get_failure_response()
+
+
 class ForgotPasswordAPI(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
         email_muid = request.data.get('emailOrMuid')
-        user = User.objects.filter(Q(muid=email_muid) | Q(email=email_muid)).first()
+
+        user = User.objects.filter(
+            Q(muid=email_muid) |
+            Q(email=email_muid)
+        ).first()
+
         if user:
             user_verification_otp = ForgetPassword.objects.create(
                 id=uuid.uuid4(),
@@ -50,6 +84,7 @@ class ForgotPasswordAPI(APIView):
                 expiry=DateTimeUtils.get_current_utc_time() + timedelta(seconds=600),
                 created_at=DateTimeUtils.get_current_utc_time()
             )
+
             send_mail(
                 subject='Forget Password',
                 message=f'This is your otp{user_verification_otp.otp}',
@@ -60,6 +95,7 @@ class ForgotPasswordAPI(APIView):
             return CustomResponse(
                 general_message='User verification OTP send successfully'
             ).get_success_response()
+
         else:
             return CustomResponse(
                 general_message='Invalid muid or mails'
