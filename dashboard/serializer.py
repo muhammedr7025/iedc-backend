@@ -1,6 +1,6 @@
 from rest_framework import serializers
 import uuid
-from .models import User
+from .models import User, ForgetPassword
 from utils.utils import DateTimeUtils
 from django.contrib.auth.hashers import make_password
 
