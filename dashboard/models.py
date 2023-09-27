@@ -289,6 +289,7 @@ class ForgetPassword(models.Model):
         unique=True,
         max_length=6
     )
+    expiry = models.DateTimeField()
     created_at = models.DateTimeField()
 
     class Meta:
