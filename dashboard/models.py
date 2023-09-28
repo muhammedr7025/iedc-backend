@@ -105,44 +105,6 @@ class UserGroupLink(models.Model):
         db_table = 'user_group_link'
 
 
-class QrCode(models.Model):
-    id = models.CharField(
-        primary_key=True,
-        unique=True,
-        max_length=36,
-        default=uuid.uuid4()
-    )
-    data = models.CharField(max_length=100, unique=True)
-    type = models.CharField(unique=True, max_length=100)
-    created_at = models.DateTimeField()
-
-    class Meta:
-        db_table = 'qr_code'
-
-
-class UserQrCodeLink(models.Model):
-    id = models.CharField(
-        primary_key=True,
-        unique=True,
-        max_length=36,
-        default=uuid.uuid4()
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='user_qr_code_link_user'
-    )
-    qr_code = models.ForeignKey(
-        QrCode,
-        on_delete=models.CASCADE,
-        related_name='user_qr_code_link_qr_code'
-    )
-    created_at = models.DateTimeField()
-
-    class Meta:
-        db_table = 'user_qr_code_link'
-
-
 class LearningStation(models.Model):
     id = models.CharField(
         primary_key=True,
@@ -155,48 +117,6 @@ class LearningStation(models.Model):
 
     class Meta:
         db_table = 'learning_station'
-
-
-class Quiz(models.Model):
-    id = models.CharField(
-        primary_key=True,
-        unique=True,
-        max_length=36,
-        default=uuid.uuid4()
-    )
-    question = models.CharField(unique=True, max_length=250)
-    option_a = models.CharField(max_length=200)
-    option_b = models.CharField(max_length=200)
-    option_c = models.CharField(max_length=200)
-    option_d = models.CharField(max_length=200)
-    answer = models.CharField(max_length=200)
-    created_at = models.DateTimeField()
-
-    class Meta:
-        db_table = 'quiz'
-
-
-class LearningStationQuizLink(models.Model):
-    id = models.CharField(
-        primary_key=True,
-        unique=True,
-        max_length=36,
-        default=uuid.uuid4()
-    )
-    quiz = models.ForeignKey(
-        Quiz,
-        on_delete=models.CASCADE,
-        related_name='learning_station_quiz_link_quiz'
-    )
-    learning_station = models.ForeignKey(
-        LearningStation,
-        on_delete=models.CASCADE,
-        related_name='learning_station_quiz_link_learning_station'
-    )
-    created_at = models.DateTimeField()
-
-    class Meta:
-        db_table = 'learning_station_quiz_link'
 
 
 class Reward(models.Model):
