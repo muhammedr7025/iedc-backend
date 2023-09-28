@@ -1,18 +1,17 @@
-import random
 import uuid
 from datetime import timedelta
+import random
 
 import decouple
-from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Q
-from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-
-from dashboard.serializer import UserRegisterSerializer
 from utils.response import CustomResponse
+from dashboard.serializer import UserRegisterSerializer
+from .models import User, ForgetPassword, Role, Group, UserGroupLink, UserRoleLink
 from utils.utils import DateTimeUtils
-from .models import User, ForgetPassword
-
+from django.core.mail import send_mail
+from rest_framework.permissions import AllowAny
 permission_classes = (AllowAny,)
 
 
@@ -20,8 +19,19 @@ class UserRegisterAPI(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
+
+        roles = Role.objects.all()
+
+        if roles.exists():
+            random_role = random.choice(
+                roles
+            )
+
         serializer = UserRegisterSerializer(
-            data=request.data
+            data=request.data,
+            context={
+                'role': random_role
+            }
         )
 
         if serializer.is_valid():
@@ -62,6 +72,72 @@ class UserLoginAPI(APIView):
         return CustomResponse(
             general_message='invalid email or muid'
         ).get_failure_response()
+
+
+class CreateBulkGroupsAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        user_count = User.objects.all().count()
+        group_count = user_count // 6 + 1
+        groups = []
+        for group_num in range(1, group_count):
+            group = Group(
+                id=uuid.uuid4(),
+                title=f"group{group_num}",
+                created_at=DateTimeUtils.get_current_utc_time()
+            )
+            groups.append(group)
+
+        Group.objects.bulk_create(groups)
+
+        return CustomResponse(
+            general_message='Groups created successfully'
+        ).get_success_response()
+
+
+class UserGroupLinkBulkCreate(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        users = list(User.objects.all())
+        groups = list(Group.objects.all())
+
+        try:
+            with transaction.atomic():
+                for group in groups:
+
+                    user_group = users[:6]
+                    users = users[6:]
+
+                    roles = list(Role.objects.all())
+
+                    for index, user in enumerate(user_group):
+
+                        role = roles[index]
+
+                        UserGroupLink.objects.create(
+                            id=uuid.uuid4(),
+                            user=user,
+                            group=group,
+                            created_at=DateTimeUtils.get_current_utc_time()
+                        )
+
+                        UserRoleLink.objects.create(
+                            id=uuid.uuid4(),
+                            user=user,
+                            role=role,
+                            created_at=DateTimeUtils.get_current_utc_time()
+                        )
+
+        except Exception as e:
+            return CustomResponse(
+                general_message=str(e)
+            ).get_failure_response()
+
+        return CustomResponse(
+            general_message='Groups assigned successfully'
+        ).get_success_response()
 
 
 class ForgotPasswordAPI(APIView):
