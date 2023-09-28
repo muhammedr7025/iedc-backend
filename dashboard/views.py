@@ -6,10 +6,9 @@ import decouple
 from django.db.models import Q
 from rest_framework.views import APIView
 from utils.response import CustomResponse
-from django.contrib.auth import authenticate
 
 from dashboard.serializer import UserRegisterSerializer
-from .models import User, ForgetPassword
+from .models import User, ForgetPassword, Role, Group
 from utils.utils import DateTimeUtils
 from django.core.mail import send_mail
 from rest_framework.permissions import AllowAny
@@ -21,8 +20,18 @@ class UserRegisterAPI(APIView):
 
     def post(self, request):
 
+        roles = Role.objects.all()
+
+        if roles.exists():
+            random_role = random.choice(
+                roles
+            )
+
         serializer = UserRegisterSerializer(
-            data=request.data
+            data=request.data,
+            context={
+                'role': random_role
+            }
         )
 
         if serializer.is_valid():
@@ -63,6 +72,28 @@ class UserLoginAPI(APIView):
         return CustomResponse(
             general_message='invalid email or muid'
         ).get_failure_response()
+
+
+class CreateBulkGroupsAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        user_count = User.objects.all().count()
+        group_count = user_count // 6 + 1
+        groups = []
+        for group_num in range(1, group_count):
+            group = Group(
+                id=uuid.uuid4(),
+                title=f"group{group_num}",
+                created_at=DateTimeUtils.get_current_utc_time()
+            )
+            groups.append(group)
+
+        Group.objects.bulk_create(groups)
+
+        return CustomResponse(
+            general_message='Groups created successfully'
+        ).get_success_response()
 
 
 class ForgotPasswordAPI(APIView):
