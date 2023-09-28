@@ -1,18 +1,18 @@
+import random
 import uuid
 from datetime import timedelta
-import random
 
 import decouple
+from django.core.mail import send_mail
 from django.db.models import Q
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
-from utils.response import CustomResponse
-from django.contrib.auth import authenticate
 
 from dashboard.serializer import UserRegisterSerializer
-from .models import User, ForgetPassword
+from utils.response import CustomResponse
 from utils.utils import DateTimeUtils
-from django.core.mail import send_mail
-from rest_framework.permissions import AllowAny
+from .models import User, ForgetPassword
+
 permission_classes = (AllowAny,)
 
 
@@ -20,7 +20,6 @@ class UserRegisterAPI(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-
         serializer = UserRegisterSerializer(
             data=request.data
         )
