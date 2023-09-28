@@ -3,12 +3,12 @@ from datetime import timedelta
 import random
 
 import decouple
+from django.db import transaction
 from django.db.models import Q
 from rest_framework.views import APIView
 from utils.response import CustomResponse
-
 from dashboard.serializer import UserRegisterSerializer
-from .models import User, ForgetPassword, Role, Group
+from .models import User, ForgetPassword, Role, Group, UserGroupLink, UserRoleLink
 from utils.utils import DateTimeUtils
 from django.core.mail import send_mail
 from rest_framework.permissions import AllowAny
@@ -93,6 +93,45 @@ class CreateBulkGroupsAPI(APIView):
 
         return CustomResponse(
             general_message='Groups created successfully'
+        ).get_success_response()
+
+
+class UserGroupLinkBulkCreate(APIView):
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        users = list(User.objects.all())
+        groups = list(Group.objects.all())
+
+        try:
+            with transaction.atomic():
+                for group in groups:
+                    user_group = users[:6]
+                    users = users[6:]
+
+                    roles = list(Role.objects.all())
+
+                    for index, user in enumerate(user_group):
+                        role = roles[index]
+                        UserGroupLink.objects.create(
+                            id=uuid.uuid4(),
+                            user=user,
+                            group=group,
+                            created_at=DateTimeUtils.get_current_utc_time()
+                        )
+                        UserRoleLink.objects.create(
+                            id=uuid.uuid4(),
+                            user=user,
+                            role=role,
+                            created_at=DateTimeUtils.get_current_utc_time()
+                        )
+        except Exception as e:
+            return CustomResponse(
+                general_message=str(e)
+            ).get_failure_response()
+
+        return CustomResponse(
+            general_message='Groups assigned successfully'
         ).get_success_response()
 
 
