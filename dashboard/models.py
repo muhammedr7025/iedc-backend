@@ -36,6 +36,7 @@ class User(AbstractUser):
     email = models.CharField(unique=True, max_length=200)
     phone = models.CharField(unique=True, max_length=15)
     password = models.CharField(max_length=200, blank=True, null=True)
+    qr_code = models.CharField(unique=True, max_length=36, default=uuid.uuid4())
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
 
