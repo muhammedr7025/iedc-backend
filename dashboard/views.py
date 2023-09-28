@@ -87,7 +87,7 @@ class ForgotPasswordAPI(APIView):
 
             send_mail(
                 subject='Forget Password',
-                message=f'This is your otp{user_verification_otp.otp}',
+                message=f'This is your otp {user_verification_otp.otp}',
                 from_email=decouple.config("FROM_MAIL"),
                 recipient_list=[user.email]
             )
