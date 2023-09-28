@@ -1,6 +1,6 @@
 from rest_framework import serializers
 import uuid
-from .models import User, UserRoleLink, QrCode, UserQrCodeLink
+from .models import User
 from utils.utils import DateTimeUtils
 from django.contrib.auth.hashers import make_password
 

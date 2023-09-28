@@ -5,11 +5,18 @@ from django.db import models
 
 
 class MyUserManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
+
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError(
+                'The Email field must be set'
+            )
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -17,7 +24,11 @@ class MyUserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, password=password, **extra_fields)
+        return self.create_user(
+            email,
+            password=password,
+            **extra_fields
+        )
 
 
 class User(AbstractUser):
@@ -30,13 +41,25 @@ class User(AbstractUser):
     is_staff = None
     date_joined = None
 
-    id = models.CharField(primary_key=True, max_length=36, default=uuid.uuid4())
+    id = models.CharField(
+        primary_key=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
     username = models.CharField(max_length=75)
     muid = models.CharField(unique=True, max_length=100)
     email = models.CharField(unique=True, max_length=200)
     phone = models.CharField(unique=True, max_length=15)
-    password = models.CharField(max_length=200, blank=True, null=True)
-    qr_code = models.CharField(unique=True, max_length=36, default=uuid.uuid4())
+    password = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+    qr_code = models.CharField(
+        unique=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=False)
 
@@ -58,7 +81,12 @@ class User(AbstractUser):
 
 
 class Role(models.Model):
-    id = models.CharField(primary_key=True, unique=True, max_length=36, default=uuid.uuid4())
+    id = models.CharField(
+        primary_key=True,
+        unique=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField()
 
@@ -67,9 +95,22 @@ class Role(models.Model):
 
 
 class UserRoleLink(models.Model):
-    id = models.CharField(primary_key=True, unique=True, max_length=36, default=uuid.uuid4())
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_role_link_user')
-    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name='user_role_link_role')
+    id = models.CharField(
+        primary_key=True,
+        unique=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='user_role_link_user'
+    )
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name='user_role_link_role'
+    )
     created_at = models.DateTimeField()
 
     class Meta:
@@ -77,7 +118,12 @@ class UserRoleLink(models.Model):
 
 
 class Group(models.Model):
-    id = models.CharField(primary_key=True, unique=True, max_length=36, default=uuid.uuid4())
+    id = models.CharField(
+        primary_key=True,
+        unique=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField()
 
@@ -86,9 +132,12 @@ class Group(models.Model):
 
 
 class UserGroupLink(models.Model):
-    id = models.CharField(primary_key=True, unique=True, max_length=36,
-                          default=uuid.uuid4()
-                          )
+    id = models.CharField(
+        primary_key=True,
+        unique=True,
+        max_length=36,
+        default=uuid.uuid4()
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

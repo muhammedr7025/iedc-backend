@@ -106,25 +106,30 @@ class UserGroupLinkBulkCreate(APIView):
         try:
             with transaction.atomic():
                 for group in groups:
+
                     user_group = users[:6]
                     users = users[6:]
 
                     roles = list(Role.objects.all())
 
                     for index, user in enumerate(user_group):
+
                         role = roles[index]
+
                         UserGroupLink.objects.create(
                             id=uuid.uuid4(),
                             user=user,
                             group=group,
                             created_at=DateTimeUtils.get_current_utc_time()
                         )
+
                         UserRoleLink.objects.create(
                             id=uuid.uuid4(),
                             user=user,
                             role=role,
                             created_at=DateTimeUtils.get_current_utc_time()
                         )
+
         except Exception as e:
             return CustomResponse(
                 general_message=str(e)
