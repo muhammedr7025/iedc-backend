@@ -4,7 +4,7 @@ import random
 
 import decouple
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, F
 from rest_framework.views import APIView
 from utils.response import CustomResponse
 from dashboard.serializer import UserRegisterSerializer
@@ -64,7 +64,26 @@ class UserLoginAPI(APIView):
         ).get_failure_response()
 
 
-class QrCodeScanner(APIView):
+class UserProfileAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        user_id = request.data.get('user_id')
+
+        user = User.objects.filter(
+            id=user_id
+        ).values(
+            'username',
+            'muid',
+            role=F('user_role_link_user__role__title')
+        )
+
+        return CustomResponse(
+            response=user
+        ).get_success_response()
+
+
+class QrCodeScannerAPI(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request):
@@ -111,7 +130,7 @@ class CreateBulkGroupsAPI(APIView):
         ).get_success_response()
 
 
-class UserGroupLinkBulkCreate(APIView):
+class UserGroupLinkBulkCreateAPI(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
