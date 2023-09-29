@@ -4,7 +4,7 @@ import random
 
 import decouple
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, F
 from rest_framework.views import APIView
 from utils.response import CustomResponse
 from dashboard.serializer import UserRegisterSerializer
@@ -20,18 +20,8 @@ class UserRegisterAPI(APIView):
 
     def post(self, request):
 
-        roles = Role.objects.all()
-
-        if roles.exists():
-            random_role = random.choice(
-                roles
-            )
-
         serializer = UserRegisterSerializer(
-            data=request.data,
-            context={
-                'role': random_role
-            }
+            data=request.data
         )
 
         if serializer.is_valid():
@@ -74,6 +64,50 @@ class UserLoginAPI(APIView):
         ).get_failure_response()
 
 
+class UserProfileAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        user_id = request.data.get('user_id')
+
+        user = User.objects.filter(
+            id=user_id
+        ).values(
+            'username',
+            'muid',
+            role=F('user_role_link_user__role__title')
+        )
+
+        return CustomResponse(
+            response=user
+        ).get_success_response()
+
+
+class QrCodeScannerAPI(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        team_mate_qr_code = request.data.get('qr_code_id')
+        user_id = request.data.get('user_id')
+
+        team_mate_group = UserGroupLink.objects.filter(
+            user__qr_code=team_mate_qr_code
+        ).first()
+
+        user_group = UserGroupLink.objects.filter(
+            user__id=user_id
+        ).first()
+
+        if user_group.group == team_mate_group.group:
+            return CustomResponse(
+                general_message='Connected successfully'
+            ).get_success_response()
+
+        return CustomResponse(
+            general_message='Connect another user'
+        ).get_success_response()
+
+
 class CreateBulkGroupsAPI(APIView):
     permission_classes = (AllowAny,)
 
@@ -96,24 +130,21 @@ class CreateBulkGroupsAPI(APIView):
         ).get_success_response()
 
 
-class UserGroupLinkBulkCreate(APIView):
+class UserGroupLinkBulkCreateAPI(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
         users = list(User.objects.all())
         groups = list(Group.objects.all())
-
         try:
             with transaction.atomic():
                 for group in groups:
 
                     user_group = users[:6]
                     users = users[6:]
-
                     roles = list(Role.objects.all())
 
                     for index, user in enumerate(user_group):
-
                         role = roles[index]
 
                         UserGroupLink.objects.create(
