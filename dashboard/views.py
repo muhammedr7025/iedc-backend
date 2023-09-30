@@ -94,17 +94,38 @@ class QrCodeScannerAPI(APIView):
             user__qr_code=team_mate_qr_code
         ).first()
 
+        if team_mate_group is None:
+            return CustomResponse(
+                general_message='User has no group'
+            ).get_failure_response()
+
         user_group = UserGroupLink.objects.filter(
             user__id=user_id
         ).first()
 
-        if user_group.group == team_mate_group.group:
+        if user_group is None:
             return CustomResponse(
-                general_message='Connected successfully'
+                general_message='User has no group'
+            ).get_failure_response()
+
+        if user_group.group == team_mate_group.group:
+
+            team_mate_details = User.objects.filter(
+                id=team_mate_group.user.id
+            ).values(
+                'username',
+                'muid',
+                role=F(
+                    'user_role_link_user__role__title'
+                )
+            )
+
+            return CustomResponse(
+                response=team_mate_details
             ).get_success_response()
 
         return CustomResponse(
-            general_message='Connect another user'
+            general_message='Opps! Connect another user'
         ).get_success_response()
 
 
@@ -113,14 +134,27 @@ class CreateBulkGroupsAPI(APIView):
 
     def post(self, request):
         user_count = User.objects.all().count()
-        group_count = user_count // 6 + 1
+
+        if user_count % 6 != 0:
+
+            remaining_users = 6 - (user_count % 6)
+
+            return CustomResponse(
+                general_message=f"Need {remaining_users} more users to assign group"
+            ).get_failure_response()
+
+        group_count = user_count // 6
+
         groups = []
+
         for group_num in range(1, group_count):
+
             group = Group(
                 id=uuid.uuid4(),
                 title=f"group{group_num}",
                 created_at=DateTimeUtils.get_current_utc_time()
             )
+
             groups.append(group)
 
         Group.objects.bulk_create(groups)
@@ -136,6 +170,7 @@ class UserGroupLinkBulkCreateAPI(APIView):
     def post(self, request):
         users = list(User.objects.all())
         groups = list(Group.objects.all())
+
         try:
             with transaction.atomic():
                 for group in groups:
