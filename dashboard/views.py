@@ -94,17 +94,38 @@ class QrCodeScannerAPI(APIView):
             user__qr_code=team_mate_qr_code
         ).first()
 
+        if team_mate_group is None:
+            return CustomResponse(
+                general_message='User has no group'
+            ).get_failure_response()
+
         user_group = UserGroupLink.objects.filter(
             user__id=user_id
         ).first()
 
-        if user_group.group == team_mate_group.group:
+        if user_group is None:
             return CustomResponse(
-                general_message='Connected successfully'
+                general_message='User has no group'
+            ).get_failure_response()
+
+        if user_group.group == team_mate_group.group:
+
+            team_mate_details = User.objects.filter(
+                id=team_mate_group.user.id
+            ).values(
+                'username',
+                'muid',
+                role=F(
+                    'user_role_link_user__role__title'
+                )
+            )
+
+            return CustomResponse(
+                response=team_mate_details
             ).get_success_response()
 
         return CustomResponse(
-            general_message='Connect another user'
+            general_message='Opps! Connect another user'
         ).get_success_response()
 
 
