@@ -2,10 +2,14 @@ import uuid
 from datetime import timedelta
 import random
 
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
 import decouple
 from django.db import transaction
 from django.db.models import Q, F
 from rest_framework.views import APIView
+
+from utils.permission import CustomizePermission, TokenGenerate
 from utils.response import CustomResponse
 from dashboard.serializer import UserRegisterSerializer
 from .models import User, ForgetPassword, Role, Group, UserGroupLink, UserRoleLink
@@ -39,33 +43,21 @@ class UserRegisterAPI(APIView):
 class UserLoginAPI(APIView):
     permission_classes = (AllowAny,)
 
-    def get(self, request):
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
 
-        email_muid = request.data.get('emailOrMuid')
-        password = request.data.get('password')
-
-        user = User.objects.filter(
-            Q(muid=email_muid) |
-            Q(email=email_muid)
-        ).first()
+        user = authenticate(request, email=email, password=password)
 
         if user:
-            if user.check_password(password):
-                return CustomResponse(
-                    general_message='Successfully login'
-                ).get_success_response()
-            else:
-                return CustomResponse(
-                    general_message='incorrect password'
-                ).get_failure_response()
-
-        return CustomResponse(
-            general_message='invalid email or muid'
-        ).get_failure_response()
+            auth = TokenGenerate().generate(user)
+            return CustomResponse(response=auth).get_success_response()
+        else:
+            return CustomResponse(general_message="login failed").get_failure_response()
 
 
 class UserProfileAPI(APIView):
-    permission_classes = (AllowAny,)
+    authentication_classes = [CustomizePermission]
 
     def get(self, request):
         user_id = request.data.get('user_id')
@@ -87,6 +79,8 @@ class QrCodeScannerAPI(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request):
+
+        user = request.user
         team_mate_qr_code = request.data.get('qr_code_id')
         user_id = request.data.get('user_id')
 
